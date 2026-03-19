@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Pro Max</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial,system-ui;
+  background:#f7f9fc;
+}
+header{
+  padding:15px;
+  text-align:center;
+  background:#eef2ff;
+}
+#chat{
+  padding:10px;
+  height:65vh;
+  overflow-y:auto;
+}
+.msg{
+  margin:8px 0;
+  padding:10px;
+  border-radius:12px;
+}
+.user{background:#dbeafe;text-align:right}
+.bot{background:#e5e7eb}
+.controls{
+  display:flex;
+  gap:5px;
+  padding:10px;
+}
+input,button,select{
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+button{background:#4f46e5;color:#fff}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>🤖 AI Pro Max</h2>
+</header>
+
+<div id="chat"></div>
+
+<div class="controls">
+  <select id="lang">
+    <option value="ru-RU">Русский</option>
+    <option value="en-US">English</option>
+    <option value="zh-CN">中文</option>
+    <option value="ja-JP">日本語</option>
+    <option value="ko-KR">한국어</option>
+    <option value="hi-IN">हिंदी</option>
+    <option value="fr-FR">Français</option>
+    <option value="de-DE">Deutsch</option>
+    <option value="es-ES">Español</option>
+    <option value="pt-BR">Português</option>
+    <option value="ar-SA">العربية</option>
+  </select>
+  <button onclick="voice()">🎙</button>
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+
+/* ---------- ADD MESSAGE ---------- */
+function add(text, cls){
+  const d=document.createElement("div");
+  d.className="msg "+cls;
+  d.textContent=text;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+/* ---------- VOICE INPUT ---------- */
+function voice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert("Voice not supported");return;}
+  const r=new SR();
+  r.lang=document.getElementById("lang").value;
+  r.onresult=e=>send(e.results[0][0].transcript);
+  r.start();
+}
+
+/* ---------- SEND TO GPT ---------- */
+async function send(text){
+  add(text,"user");
+
+  const res=await fetch("/api/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      message:text,
+      lang:document.getElementById("lang").value
+    })
+  });
+
+  const data=await res.json();
+  add(data.reply,"bot");
+  speak(data.reply);
+}
+
+/* ---------- VOICE OUTPUT ---------- */
+function speak(text){
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=document.getElementById("lang").value;
+  u.rate=1;
+  speechSynthesis.speak(u);
+}
+</script>
+
+</body>
+</html>
